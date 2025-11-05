@@ -1,4 +1,4 @@
-# [City Name] Rental Price Analyzer
+# San Francisco Rental Price Analyzer
 
 **Team Members:** Alexander Davis, Eric Goldman, Manik Sethi, Kesar Sidhu  
 **Course:** STA 141B  
@@ -6,10 +6,10 @@
 
 ## 1. Project Overview
 
-This project is a data acquisition and analysis pipeline built to answer key questions about the rental market in [City Name]. The primary goal is to determine the *true* drivers of rental prices by acquiring, processing, and joining two distinct types of data:
+This project is a data acquisition and analysis pipeline built to answer key questions about the rental market in San Francisco. The primary goal is to determine the *true* drivers of rental prices by acquiring, processing, and joining two distinct types of data:
 
-1.  **Scraped Listings Data:** Real-time rental listings scraped from [Name of Rental Site].
-2.  **Public API Data:** Neighborhood-level statistics (e.g., crime rates, median income) from the [City Name] Open Data Portal.
+1.  **Scraped Listings Data:** Real-time rental listings scraped from rental website (e.g. Zillow, Craiglist).
+2.  **Public API Data:** Neighborhood-level statistics (e.g., crime rates, median income) from the San Francisco Open Data Portal.
 
 By parsing unstructured text from listing descriptions and joining it with quantitative neighborhood data, we build a predictive model to identify which factors—from "in-unit laundry" to "zip code crime rate"—have the most significant impact on price.
 
@@ -26,7 +26,7 @@ The project is built as a three-stage data pipeline, ensuring a clean separation
 
 
 
-1.  **Acquisition (API):** The `api/api_fetcher.py` script queries the [City Name] Open Data Portal API for datasets on [crime, median income, etc.] by zip code. This data is cleaned and loaded into the `zipcodes` table in our `rentals.db` SQLite database.
+1.  **Acquisition (API):** The `api/api_fetcher.py` script queries the San Francisco Open Data Portal API for datasets on [crime, median income, etc.] by zip code. This data is cleaned and loaded into the `zipcodes` table in our `rentals.db` SQLite database.
 2.  **Acquisition (Scraper):** The `scraper/scraper.py` script scrapes [Number] pages of rental listings from [Rental Site]. It extracts structured data (price, beds, baths) and unstructured data (the full text description) and loads them into the `rentals` table in the same `rentals.db` file.
 3.  **Analysis:** The `notebooks/analysis.ipynb` notebook reads the final `rentals.db` file. It joins the `rentals` and `zipcodes` tables, performs feature engineering (parsing the unstructured text), builds the regression model, and generates all final visualizations.
 
