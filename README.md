@@ -1,7 +1,7 @@
 # [City Name] Rental Price Analyzer
 
-**Team Members:** [Alexander Davis], [Eric Goldman], [Manik Sethi], [Kesar Sidhu]  
-**Course:** [STA 141B]  
+**Team Members:** Alexander Davis, Eric Goldman, Manik Sethi, Kesar Sidhu  
+**Course:** STA 141B  
 **Due Date:** December 12, 2025
 
 ## 1. Project Overview
