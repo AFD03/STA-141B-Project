@@ -22,7 +22,6 @@ CREATE TABLE IF NOT EXISTS rentals (
     scraped_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
 """)
-
 # message for confirmation
 print("Table 'rentals' created successfully.")
 
@@ -34,7 +33,18 @@ CREATE TABLE IF NOT EXISTS neighborhood_data (
     avg_median_income REAL 
 )
 """)
+# message for confirmation
 print("Table 'neighborhood_data' created.")
+
+# store the raw data from the crime API
+c.execute("""
+CREATE TABLE IF NOT EXISTS raw_crime_by_neighborhood (
+    analysis_neighborhood TEXT PRIMARY KEY,
+    crime_count INTEGER
+)
+""")
+# message for confirmation
+print("Table 'raw_crime_by_neighborhood' created.")
 
 # temporary table to hold the income data before mapping it to zip codes
 c.execute("""
@@ -43,18 +53,30 @@ CREATE TABLE IF NOT EXISTS tract_data (
     median_income INTEGER
 )
 """)
+# message for confirmation
 print("Table 'tract_data' created.")
 
-# 'crosswalk' table (to transfer census data to zipcodes)
+# 'crosswalk_tract_to_zip' table (to transfer census data to zipcodes)
 c.execute("""
-CREATE TABLE IF NOT EXISTS crosswalk (
+CREATE TABLE IF NOT EXISTS crosswalk_tract_to_zip (
     tract TEXT,
     zip TEXT,
     res_ratio REAL, 
     PRIMARY KEY (tract, zip)
 )
 """)
-print("Table 'crosswalk' created.")
+# message for confirmation
+print("Table 'crosswalk_tract_to_zip' created.")
+
+# 'crosswalk_tract_to_hood' table
+c.execute("""
+CREATE TABLE IF NOT EXISTS crosswalk_tract_to_hood (
+    tract TEXT PRIMARY KEY,
+    neighborhood TEXT
+)
+""")
+# message for confirmation
+print("Table 'crosswalk_tract_to_hood' created.")
 
 conn.commit()
 conn.close()
