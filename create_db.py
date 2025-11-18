@@ -26,20 +26,37 @@ CREATE TABLE IF NOT EXISTS rentals (
 # message for confirmation
 print("Table 'rentals' created successfully.")
 
-# creating table with 'zip_code' as the primary key (one row per zip code)
+# table stores data by zip code, the final join key (may add more columns later)
 c.execute("""
-CREATE TABLE IF NOT EXISTS zipcodes (
+CREATE TABLE IF NOT EXISTS neighborhood_data (
     zip_code TEXT PRIMARY KEY,
-    median_income INTEGER,
-    crime_count INTEGER
+    crime_count_2025 INTEGER,
+    avg_median_income REAL 
 )
 """)
+print("Table 'neighborhood_data' created.")
 
-# message for confirmation
-print("Table 'zipcodes' created.")
+# temporary table to hold the income data before mapping it to zip codes
+c.execute("""
+CREATE TABLE IF NOT EXISTS tract_data (
+    tract_id TEXT PRIMARY KEY,
+    median_income INTEGER
+)
+""")
+print("Table 'tract_data' created.")
+
+# 'crosswalk' table (to transfer census data to zipcodes)
+c.execute("""
+CREATE TABLE IF NOT EXISTS crosswalk (
+    tract TEXT,
+    zip TEXT,
+    res_ratio REAL, 
+    PRIMARY KEY (tract, zip)
+)
+""")
+print("Table 'crosswalk' created.")
 
 conn.commit()
 conn.close()
-
-# confirmation of tables and database creation
-print("Database and tables ready.")
+# confirm tables and database created
+print("Database rentals.db and all tables are ready.")
