@@ -72,17 +72,17 @@ def fetch_crime_data():
 
 def fetch_income_data():
     """
-    Fetches median household income by census tract from the US Census.
+    Fetches median household income and population by census tract from the US Census.
     Stores in 'raw_tract_data'.
     """
     # confirmation of fetching data
     print("\nFetching income data from Census API")
 
     # ACS 5 year data, table B19013
-    # get estimate 'B19013_001E for all census tracts in SF, CA
+    # get estimate 'B19013_001E' and 'B01003_001E' for all census tracts in SF, CA
     census_api_url = (
         "https://api.census.gov/data/2023/acs/acs5"
-        "?get=NAME,B19013_001E"
+        "?get=NAME,B19013_001E,B01003_001E"
         "&for=tract:*"
         "&in=state:06&in=county:075"
     )
@@ -95,20 +95,23 @@ def fetch_income_data():
     # cleaning data
     income_df = income_df.rename(columns={
         'B19013_001E': 'median_income',
+        'B01003_001E': 'total_population'
     })
     # create full 11 digit FIPS code by combining state + county + tract
     # this give the full tract_id
     income_df['tract_id'] = income_df['state'] + income_df['county'] + income_df['tract']
 
-    # convert income to number with negative values referring to 'no data'.
+    # convert numbers with negative values referring to 'no data'.
     income_df['median_income'] = pd.to_numeric(income_df['median_income'])
-    # filter out tracts with no income data
+    income_df['total_population'] = pd.to_numeric(income_df['total_population'])
+    # filter out tracts with no income/pop data
     income_df = income_df[income_df['median_income'] > 0]
-    # reduce to two columns
-    income_df = income_df[['tract_id', 'median_income']]
+    income_df = income_df[income_df['total_population'] > 0]
+    # reduce to three columns
+    income_df = income_df[['tract_id', 'median_income', 'total_population']]
 
     # print out how many tracts data is found for
-    print(f"Found income data for {len(income_df)} census tracts.")
+    print(f"Found income/pop data for {len(income_df)} census tracts.")
 
     # store in the rentals database
     conn = sqlite3.connect('rentals.db')
@@ -117,12 +120,12 @@ def fetch_income_data():
         conn,
         if_exists = 'replace',
         index = False,
-        dtype = {'tract_id': 'TEXT PRIMARY KEY', 'median_income': 'INTEGER'}
+        dtype = {'tract_id': 'TEXT PRIMARY KEY', 'median_income': 'INTEGER', 'total_population': 'INTEGER'}
     )
     conn.commit()
     conn.close()
     # confirm data is loaded into table
-    print("Successfully loaded tract income data into 'tract_data' table.")
+    print("Successfully loaded tract income and population data into 'tract_data' table.")
 
 
 def fetch_tract_to_zip_crosswalk():
@@ -130,8 +133,6 @@ def fetch_tract_to_zip_crosswalk():
     Fetches the Tract-to-Zip crosswalk file from the official HUD API
     """
     print("\nFetching Tract-to-Zip crosswalk from HUD API.")
-
-    print(f"DEBUG: Using key that starts with '{HUD_API_KEY[:5]}' and ends with '{HUD_API_KEY[-5:]}'")
 
     HUD_API_URL = "https://www.huduser.gov/hudapi/public/usps"
 
@@ -152,12 +153,10 @@ def fetch_tract_to_zip_crosswalk():
         response = requests.get(HUD_API_URL, params=params, headers=headers)
         response.raise_for_status()
 
-        print("API request successful. Reading JSON data.")
-
         data = response.json()
         crosswalk_df = pd.DataFrame(data['data']['results'])
 
-    # error handling
+    # error handling for wrong key, etc.
     except requests.exceptions.HTTPError as e:
         print(f"\n--- HTTP ERROR ---")
         print(f"Failed to download the file. Status code: {e.response.status_code}")
@@ -167,7 +166,7 @@ def fetch_tract_to_zip_crosswalk():
         print("------------------\n")
         return
 
-    print("SUCCESS. Data was downloaded.")
+    print("Data was downloaded.")
 
 
     # API will return 'zip' and 'tract' (columns properly renamed)
@@ -304,6 +303,7 @@ def join_all_data():
     # group by tract
     tract_grouped = tract_master.groupby('tract_id').agg(
         median_income=('median_income', 'first'),
+        total_population=('total_population', 'first'),
         crime_count=('crime_count', 'sum')
     ).reset_index()
 
@@ -324,18 +324,24 @@ def join_all_data():
     # weight by residential ratio and aggregate to zips
     final_join['income_component'] = final_join['median_income'] * final_join['res_ratio']
     final_join['crime_component']  = final_join['crime_count']   * final_join['res_ratio']
+    final_join['population_component'] = final_join['total_population'] * final_join['res_ratio']
 
     # final groupings
     zip_grouped = final_join.groupby('zip').agg(
         avg_median_income=('income_component', 'sum'),
-        crime_count_2025=('crime_component', 'sum')
+        crime_count_2025=('crime_component', 'sum'),
+        population_2025 = ('population_component', 'sum')
     ).reset_index()
 
+    # round values to proper decimal placings
     zip_grouped['avg_median_income'] = zip_grouped['avg_median_income'].round(2)
     zip_grouped['crime_count_2025']  = zip_grouped['crime_count_2025'].round(0).astype(int)
+    zip_grouped['population_2025'] = zip_grouped['population_2025'].fillna(0).round(0).astype(int)
 
+    # get values that make sense, non-negative
     zip_grouped = zip_grouped.rename(columns={'zip': 'zip_code'})
     zip_grouped = zip_grouped[zip_grouped['avg_median_income'] > 0]
+    zip_grouped = zip_grouped[zip_grouped['population_2025'] > 0]
 
     # final output row numbers
     print(f"Final dataset contains {len(zip_grouped)} ZIP codes with income+crime data")
@@ -349,7 +355,8 @@ def join_all_data():
         dtype={
             'zip_code': 'TEXT PRIMARY KEY',
             'crime_count_2025': 'INTEGER',
-            'avg_median_income': 'REAL'
+            'avg_median_income': 'REAL',
+            'population_2025': 'INTEGER'
         }
     )
 

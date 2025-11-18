@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS neighborhood_data (
     zip_code TEXT PRIMARY KEY,
     crime_count_2025 INTEGER,
     avg_median_income REAL 
+    population_2025 REAL
 )
 """)
 # message for confirmation
@@ -51,6 +52,7 @@ c.execute("""
 CREATE TABLE IF NOT EXISTS tract_data (
     tract_id TEXT PRIMARY KEY,
     median_income INTEGER
+    total_population INTEGER
 )
 """)
 # message for confirmation
