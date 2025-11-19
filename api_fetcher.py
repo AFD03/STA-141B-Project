@@ -3,26 +3,26 @@ from sodapy import Socrata
 import sqlite3
 import requests
 
-HUD_API_KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI2IiwianRpIjoiZGViOGNhYjBmYmU3MmViYWI3OTkwOGM5NjVlYzI4NTQ4OGY1NmVmYWI1MThkN2NhMzYwYjY2NzVlZmFjMzkxMzllNWI3MWY1ZjhmNDVjYmIiLCJpYXQiOjE3NjM0NDQ2NDguOTMwNDM0LCJuYmYiOjE3NjM0NDQ2NDguOTMwNDM2LCJleHAiOjIwNzg5Nzc0NDguOTI0MDg2LCJzdWIiOiIxMTMyNjEiLCJzY29wZXMiOltdfQ.RFJKmr9mfPEGvtL8rzuujmReAs4t8w_2rFJKHAPMjpHRm47Xgh3PGDxx7CDrKzhiiQ_zcSj3SzR42zY3aGy9tA"
-
 # note: possible warning "NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'"
+
+# key below will likely vary by user
+HUD_API_KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI2IiwianRpIjoiZGViOGNhYjBmYmU3MmViYWI3OTkwOGM5NjVlYzI4NTQ4OGY1NmVmYWI1MThkN2NhMzYwYjY2NzVlZmFjMzkxMzllNWI3MWY1ZjhmNDVjYmIiLCJpYXQiOjE3NjM0NDQ2NDguOTMwNDM0LCJuYmYiOjE3NjM0NDQ2NDguOTMwNDM2LCJleHAiOjIwNzg5Nzc0NDguOTI0MDg2LCJzdWIiOiIxMTMyNjEiLCJzY29wZXMiOltdfQ.RFJKmr9mfPEGvtL8rzuujmReAs4t8w_2rFJKHAPMjpHRm47Xgh3PGDxx7CDrKzhiiQ_zcSj3SzR42zY3aGy9tA"
 
 def fetch_crime_data():
     """
-    Fetches 2025 crime incidents grouped by 'analysis_neighborhood'
-    and stores them in 'raw_crime_by_neighborhood'
+    Fetches 2025 crime incidents grouped by 'analysis_neighborhood' and stores them in 'raw_crime_by_neighborhood'
     """
-    # confirmation of fetching data
+    # use Socrata since dataSF is build on it
     print("Fetching crime data from DataSF.")
     client = Socrata('data.sfgov.org', None)
 
     # police incidents (2018-present) id
     dataset_id = 'wg3w-h783'
 
-    # getting crime data
+    # getting crime data for neighborhoods
     soql_select = "analysis_neighborhood"
 
-    # get all incidents from 2025.
+    # get all incidents from 2025
     soql_where = "incident_date >= '2025-01-01T00:00:00'"
 
     # set a high limit for crime data to get (on avg ~150k-200k incidents per year)
@@ -32,7 +32,9 @@ def fetch_crime_data():
         where=soql_where,
         limit=250000  # up to 250,000 raw incidents
     )
-    crime_df = pd.DataFrame.from_records(results) # creating dataframe for crime
+
+    # creating dataframe for crime
+    crime_df = pd.DataFrame.from_records(results)
     crime_df = crime_df.dropna(subset=['analysis_neighborhood'])
 
     # convert all neighborhood names to lowercase before grouping (also strip white space)
@@ -42,7 +44,7 @@ def fetch_crime_data():
     crime_df = crime_df[crime_df['analysis_neighborhood'] != '']
     crime_counts = crime_df.groupby('analysis_neighborhood').size()
 
-    # convert crime_counts to a DataFrame
+    # convert crime_counts to an aggregated DataFrame
     crime_df_agg = crime_counts.to_frame(name='crime_count').reset_index()
 
     # verify number of neighborhoods were we find crime incidents
@@ -52,11 +54,11 @@ def fetch_crime_data():
     conn = sqlite3.connect('rentals.db')
     c = conn.cursor()
 
-    # explicitly DELETE all old data from the table
+    # explicitly delete all old data from the table
     print("Deleting old crime data from table.")
     c.execute("DELETE FROM raw_crime_by_neighborhood")
 
-    # APPEND the new, clean DataFrame to the empty table
+    # then, append the new DataFrame to the empty table
     print("Appending new, clean data.")
     crime_df_agg.to_sql(
         'raw_crime_by_neighborhood',
@@ -75,10 +77,8 @@ def fetch_income_data():
     Fetches median household income and population by census tract from the US Census.
     Stores in 'raw_tract_data'.
     """
-    # confirmation of fetching data
     print("\nFetching income data from Census API")
-
-    # ACS 5 year data, table B19013
+    # ACS 5 year data, table B19013 (income) and table B01003 (population)
     # get estimate 'B19013_001E' and 'B01003_001E' for all census tracts in SF, CA
     census_api_url = (
         "https://api.census.gov/data/2023/acs/acs5"
@@ -92,13 +92,12 @@ def fetch_income_data():
     # convert data to DataFrame with columns name, income, & tract
     income_df = pd.DataFrame(data[1:], columns=data[0])
 
-    # cleaning data
+    # defining proper names for income and pop
     income_df = income_df.rename(columns={
         'B19013_001E': 'median_income',
         'B01003_001E': 'total_population'
     })
-    # create full 11 digit FIPS code by combining state + county + tract
-    # this give the full tract_id
+    # create full 11 digit FIPS code by combining state + county + tract to get full tract id
     income_df['tract_id'] = income_df['state'] + income_df['county'] + income_df['tract']
 
     # convert numbers with negative values referring to 'no data'.
@@ -118,9 +117,9 @@ def fetch_income_data():
     income_df.to_sql(
         'tract_data',
         conn,
-        if_exists = 'replace',
-        index = False,
-        dtype = {'tract_id': 'TEXT PRIMARY KEY', 'median_income': 'INTEGER', 'total_population': 'INTEGER'}
+        if_exists='replace',
+        index=False,
+        dtype={'tract_id': 'TEXT PRIMARY KEY', 'median_income': 'INTEGER', 'total_population': 'INTEGER'}
     )
     conn.commit()
     conn.close()
@@ -133,10 +132,9 @@ def fetch_tract_to_zip_crosswalk():
     Fetches the Tract-to-Zip crosswalk file from the official HUD API
     """
     print("\nFetching Tract-to-Zip crosswalk from HUD API.")
+    hud_api_url = "https://www.huduser.gov/hudapi/public/usps"
 
-    HUD_API_URL = "https://www.huduser.gov/hudapi/public/usps"
-
-    # params for debugging
+    # params for first quarter data
     params = {
         "type": 1,
         "query": "All",
@@ -148,48 +146,40 @@ def fetch_tract_to_zip_crosswalk():
         "Authorization": f"Bearer {HUD_API_KEY}"
     }
 
+    # send request to HUD for tract_id / zip_code data
     try:
         print("Sending API request to HUD.")
-        response = requests.get(HUD_API_URL, params=params, headers=headers)
+        response = requests.get(hud_api_url, params=params, headers=headers)
         response.raise_for_status()
 
         data = response.json()
         crosswalk_df = pd.DataFrame(data['data']['results'])
 
-    # error handling for wrong key, etc.
+    # error handling for wrong key, improper download, etc.
     except requests.exceptions.HTTPError as e:
         print(f"\n--- HTTP ERROR ---")
         print(f"Failed to download the file. Status code: {e.response.status_code}")
         if e.response.status_code in [401, 403]:
             print("ERROR: Your API Key is wrong, invalid, or expired.")
-        print(f"URL: {HUD_API_URL}")
+        print(f"URL: {hud_api_url}")
         print("------------------\n")
         return
-
     print("Data was downloaded.")
-
 
     # API will return 'zip' and 'tract' (columns properly renamed)
     crosswalk_df = crosswalk_df.rename(columns={'zipcode': 'zip'})
     crosswalk_df = crosswalk_df.rename(columns={'geoid': 'tract'})
 
-    # check if the required columns exist
-    required_cols = ['tract', 'zip', 'res_ratio']
-    if not all(col in crosswalk_df.columns for col in required_cols):
-        print("--- ERROR: Missing expected columns ---")
-        print(f"Expected: {required_cols}")
-        print(f"Got: {crosswalk_df.columns.tolist()}")
-        print("Please check the debug output and update the script.")
-        return
-
+    # get the 3 columns needed
     crosswalk_df = crosswalk_df[['tract', 'zip', 'res_ratio']]
 
     # filter for SF tracts only (start with '06075')
     crosswalk_df = crosswalk_df[crosswalk_df['tract'].str.startswith('06075')]
 
+    # get numeric data from 'res_ratio' > 0
     crosswalk_df['res_ratio'] = pd.to_numeric(crosswalk_df['res_ratio'])
     crosswalk_df = crosswalk_df[crosswalk_df['res_ratio'] > 0]
-
+    # print number of records found
     print(f"Found {len(crosswalk_df)} Tract-to-Zip records for SF.")
 
     # store in rentals database
@@ -242,9 +232,9 @@ def fetch_tract_to_hood_crosswalk():
 
 def join_all_data():
     """
-    Final clean join from crime → neighborhood → tract → zip.
+    Final clean join from crime -> neighborhood -> tract -> zip.
+    Income and population data follow.
     """
-
     print("\nStarting Final Data Join.")
     conn = sqlite3.connect('rentals.db')
 
@@ -255,17 +245,17 @@ def join_all_data():
     zip_map   = pd.read_sql("SELECT * FROM crosswalk_tract_to_zip", conn)
 
     # normalize neighborhood names for proper matching
-    crime_df['analysis_neighborhood'] = (crime_df['analysis_neighborhood']
-                                             .astype(str).str.strip().str.lower())
-    hood_map['neighborhood'] = (hood_map['neighborhood']
-                                    .astype(str).str.strip().str.lower())
+    crime_df['analysis_neighborhood'] = (crime_df['analysis_neighborhood'].astype(str).str.strip().str.lower())
+    hood_map['neighborhood'] = (hood_map['neighborhood'].astype(str).str.strip().str.lower())
     crime_df = crime_df[crime_df['analysis_neighborhood'] != ""]
     hood_map = hood_map[hood_map['neighborhood'] != ""]
 
-    # normalize ALL census tract IDs to 11-digit GEOIDs
+    # set normalize def for multiple uses on data (need tract ids to match perfectly)
     def normalize_tract(t):
         t = str(t).strip().replace(".0", "")
         return t.zfill(11)
+
+    # normalize ALL census tract IDs to 11-digit GEOIDs
     income_df['tract_id'] = income_df['tract_id'].apply(normalize_tract)
     hood_map['tract'] = hood_map['tract'].apply(normalize_tract)
     zip_map['tract'] = zip_map['tract'].apply(normalize_tract)
@@ -282,22 +272,22 @@ def join_all_data():
         hood_map,
         left_on='analysis_neighborhood',
         right_on='neighborhood',
-        how='inner'
+        how='inner' # inner join
     )
+    # only need tract and crime count columns
     crime_by_tract = crime_with_tract[['tract', 'crime_count']]
 
-    # join income to crime by tract
+    # now we can join income to crime by tract
     print("Joining income_df with crime_by_tract.")
-
     tract_master = pd.merge(
         income_df,
         crime_by_tract,
         left_on='tract_id',
         right_on='tract',
-        how='left'        # do not outer join here!
+        how='left' # left join
     )
 
-    # missing crime means 0 crimes, not NaN
+    # switch missing crimes (NaN) to 0
     tract_master['crime_count'] = tract_master['crime_count'].fillna(0)
 
     # group by tract
@@ -317,7 +307,7 @@ def join_all_data():
         zip_map,
         left_on='tract_id',
         right_on='tract',
-        how='inner'
+        how='inner' # inner join
     )
     print(f"Joined {len(final_join)} tract with zip rows.")
 
@@ -338,15 +328,15 @@ def join_all_data():
     zip_grouped['crime_count_2025']  = zip_grouped['crime_count_2025'].round(0).astype(int)
     zip_grouped['population_2025'] = zip_grouped['population_2025'].fillna(0).round(0).astype(int)
 
-    # get values that make sense, non-negative
+    # get values that make sense, so non-negative
     zip_grouped = zip_grouped.rename(columns={'zip': 'zip_code'})
     zip_grouped = zip_grouped[zip_grouped['avg_median_income'] > 0]
     zip_grouped = zip_grouped[zip_grouped['population_2025'] > 0]
 
-    # final output row numbers
+    # final output row number
     print(f"Final dataset contains {len(zip_grouped)} ZIP codes with income+crime data")
 
-    # save final output
+    # save final output and commit neighborhood_data to database
     zip_grouped.to_sql(
         'neighborhood_data',
         conn,
@@ -359,7 +349,6 @@ def join_all_data():
             'population_2025': 'INTEGER'
         }
     )
-
     conn.commit()
     conn.close()
     print("\nSuccessfully saved final joined data to 'neighborhood_data'.")

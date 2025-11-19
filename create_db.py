@@ -3,11 +3,10 @@ import sqlite3
 # creating file 'rentals.db' in project folder
 conn = sqlite3.connect('rentals.db')
 c = conn.cursor()
-
-# message for confirmation
 print("Database rentals.db created.")
 
 # create 'rentals' table with defined columns for webscraping portion
+# note: can add more later if needed
 c.execute("""
 CREATE TABLE IF NOT EXISTS rentals (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -22,10 +21,9 @@ CREATE TABLE IF NOT EXISTS rentals (
     scraped_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
 """)
-# message for confirmation
 print("Table 'rentals' created successfully.")
 
-# table stores data by zip code, the final join key (may add more columns later)
+# table stores data by zip code, the final join key
 c.execute("""
 CREATE TABLE IF NOT EXISTS neighborhood_data (
     zip_code TEXT PRIMARY KEY,
@@ -34,20 +32,18 @@ CREATE TABLE IF NOT EXISTS neighborhood_data (
     population_2025 REAL
 )
 """)
-# message for confirmation
 print("Table 'neighborhood_data' created.")
 
-# store the raw data from the crime API
+# store the raw data from the crime API (use neighborhood as key)
 c.execute("""
 CREATE TABLE IF NOT EXISTS raw_crime_by_neighborhood (
     analysis_neighborhood TEXT PRIMARY KEY,
     crime_count INTEGER
 )
 """)
-# message for confirmation
 print("Table 'raw_crime_by_neighborhood' created.")
 
-# temporary table to hold the income data before mapping it to zip codes
+# temp table to hold the income and population data before mapping it to zip codes
 c.execute("""
 CREATE TABLE IF NOT EXISTS tract_data (
     tract_id TEXT PRIMARY KEY,
@@ -55,7 +51,6 @@ CREATE TABLE IF NOT EXISTS tract_data (
     total_population INTEGER
 )
 """)
-# message for confirmation
 print("Table 'tract_data' created.")
 
 # 'crosswalk_tract_to_zip' table (to transfer census data to zipcodes)
@@ -67,20 +62,18 @@ CREATE TABLE IF NOT EXISTS crosswalk_tract_to_zip (
     PRIMARY KEY (tract, zip)
 )
 """)
-# message for confirmation
 print("Table 'crosswalk_tract_to_zip' created.")
 
-# 'crosswalk_tract_to_hood' table
+# 'crosswalk_tract_to_hood' table (final link of tract id to neighborhood)
 c.execute("""
 CREATE TABLE IF NOT EXISTS crosswalk_tract_to_hood (
     tract TEXT PRIMARY KEY,
     neighborhood TEXT
 )
 """)
-# message for confirmation
 print("Table 'crosswalk_tract_to_hood' created.")
 
+# tables and database created
 conn.commit()
 conn.close()
-# confirm tables and database created
 print("Database rentals.db and all tables are ready.")
