@@ -4,6 +4,7 @@ rentals.db
 # Ignore all files in the virtual environment
 /venv/
 .env
+.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
