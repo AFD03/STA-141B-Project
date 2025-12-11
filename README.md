@@ -11,7 +11,7 @@ This project is a data acquisition and analysis pipeline built to answer key que
 1.  **Scraped Listings Data:** Real-time rental listings scraped from rental website (e.g. Zillow, Craiglist).
 2.  **Public API Data:** Neighborhood-level statistics (e.g., crime rates, median income) from the San Francisco Open Data Portal.
 
-By parsing unstructured text from listing descriptions and joining it with quantitative neighborhood data, we build a predictive model to identify which factors—from "in-unit laundry" to "zip code crime rate"—have the most significant impact on price.
+By parsing unstructured text from listing descriptions and joining it with quantitative neighborhood data, we build a predictive model to identify which factors have the most significant impact on price.
 
 ## 2. Research Questions
 
@@ -22,7 +22,7 @@ This project seeks to answer the following:
 
 ## 3. Data Architecture & Pipeline
 
-The project is built as a three-stage data pipeline, ensuring a clean separation between data acquisition and analysis.
+The project is built as a three-stage data pipeline.
 
 
 
