@@ -32,7 +32,7 @@ The project is built as a three-stage data pipeline, ensuring a clean separation
 
 ## 4. Tech Stack
 
-* **Data Acquisition:** Python, `BeautifulSoup4`, `Requests`, `sqlite3`
+* **Data Acquisition:** Python, `Selenium`, `Sodapy`, `Requests`, `sqlite3`
 * **Data Analysis:** `pandas`, `scikit-learn` (for Linear Regression)
 * **Data Visualization:** `matplotlib`, `plotly` (for choropleth maps)
 * **Environment:** PyCharm (for script development), Google Colab (for collaborative analysis)
