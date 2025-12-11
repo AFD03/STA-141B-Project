@@ -5,8 +5,8 @@ import requests
 
 # note: possible warning "NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'"
 
-# key below will likely vary by user
-HUD_API_KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI2IiwianRpIjoiZGViOGNhYjBmYmU3MmViYWI3OTkwOGM5NjVlYzI4NTQ4OGY1NmVmYWI1MThkN2NhMzYwYjY2NzVlZmFjMzkxMzllNWI3MWY1ZjhmNDVjYmIiLCJpYXQiOjE3NjM0NDQ2NDguOTMwNDM0LCJuYmYiOjE3NjM0NDQ2NDguOTMwNDM2LCJleHAiOjIwNzg5Nzc0NDguOTI0MDg2LCJzdWIiOiIxMTMyNjEiLCJzY29wZXMiOltdfQ.RFJKmr9mfPEGvtL8rzuujmReAs4t8w_2rFJKHAPMjpHRm47Xgh3PGDxx7CDrKzhiiQ_zcSj3SzR42zY3aGy9tA"
+# follow instructions on `https://www.huduser.gov/portal/dataset/uspszip-api.html` to create access key for HUD USPS data
+HUD_API_KEY = "YOUR_HUD_API_TOKEN_HERE"
 
 def fetch_crime_data():
     """
