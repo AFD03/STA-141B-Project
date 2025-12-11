@@ -42,10 +42,9 @@ def insert_data_into_db(df: pd.DataFrame):
     print("Count non-null:", df_to_insert['neighborhood'].notna().sum())
     print("Count null:", df_to_insert['neighborhood'].isna().sum())
 
-    # We must iterate through the DataFrame and apply the SQL fix to each row
+    # iterate through the DataFrame and apply the SQL fix to each row
     for index, row in df_to_insert.iterrows():
         try:
-            # SQL syntax: INSERT OR IGNORE
             cur.execute("""
                         INSERT
                         OR REPLACE INTO rentals (
@@ -81,7 +80,7 @@ def insert_data_into_db(df: pd.DataFrame):
 
 
         except Exception as e:
-            # If the error is not the UNIQUE constraint, we still want to know
+            # If the error is not the UNIQUE constraint
             print(f"ERROR: Failed to insert PID {row['post_id']} due to: {e}")
 
     con.commit()
@@ -89,17 +88,7 @@ def insert_data_into_db(df: pd.DataFrame):
 
     print(f"Insertion complete. Database is updated.")
 
-
-# You must also remove the 'drop_duplicates' line from your main logic,
-# as the database handles the uniqueness now.
-
-
-
 def main():
-    if not os.path.exists(CSV_PATH):
-        print(f"ERROR: Final merged CSV not found at '{CSV_PATH}'. Run the scraper first.")
-        return
-
     df_merged = pd.read_csv(CSV_PATH)
 
     df_merged['zip code'] = df_merged['zip code'].apply(clean_zip_code)
@@ -107,5 +96,4 @@ def main():
 
 
 if __name__ == '__main__':
-
     main()
