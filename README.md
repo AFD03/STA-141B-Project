@@ -26,8 +26,8 @@ The project is built as a three-stage data pipeline.
 
 
 
-1.  **Acquisition (API):** The `api_fetcher.py` script queries the San Francisco Open Data Portal API for datasets on [crime, median income, etc.] by zip code. This data is cleaned and loaded into the `zipcodes` table in our `rentals.db` SQLite database.
-2.  **Acquisition (Scraper):** The `scraper` folder includes script that scrapes [Number] pages of rental listings from [Rental Site]. It extracts structured data (price, beds, baths) and unstructured data (the full text description) and loads them into the `rentals` table in the same `rentals.db` file.
+1.  **Acquisition (API):** The `api_fetcher.py` script queries the San Francisco Open Data Portal API for datasets on crime and the U.S. Census API for income data by zip code. This data is cleaned and loaded into the `zipcodes` table in our `rentals.db` SQLite database.
+2.  **Acquisition (Scraper):** The `scraper` folder includes script that scrapes rental listings from Craigslist. It extracts structured data (price, beds, baths) and unstructured data (the full text description) and loads them into the `rentals` table in the same `rentals.db` file.
 3.  **Analysis:** The `notebooks` folder contains notebooks that read the final `rentals.db` file. They join the `rentals` and `zipcodes` tables, perform feature engineering (parsing the unstructured text), build the regression model, and generate all final visualizations.
 
 ## 4. Tech Stack
