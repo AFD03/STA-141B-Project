@@ -18,11 +18,11 @@ def clean_zip_code(zip_code_str):
 
 def insert_data_into_db(df):
     """
-    Connects to SQLite and performs a robust row-by-row insertion
-    using 'INSERT OR IGNORE' to prevent crashing on duplicate listings.
+    Connects to SQLite and performs row-by-row insertion using 
+    'INSERT OR REPLACE' to prevent crashing on duplicate listings.
     """
 
-    print(f"\nAttempting to insert {len(df)} records into {DB_NAME}...")
+    print(f"\nAttempting to insert {len(df)} records into {DB_NAME}.")
     con = sqlite3.connect(DB_NAME)
     cur = con.cursor()
 
