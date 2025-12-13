@@ -2,14 +2,13 @@ import pandas as pd
 import sqlite3
 import os
 import re
-from typing import List, Dict, Optional
 
 # config
 DB_NAME = 'rentals.db'
 CSV_PATH = 'rentals.csv'
 
 # existed funcs modified
-def clean_zip_code(zip_code_str: str) -> Optional[str]:
+def clean_zip_code(zip_code_str):
     """Cleans and validates the zip code field."""
     if pd.isna(zip_code_str):
         return None
@@ -17,7 +16,7 @@ def clean_zip_code(zip_code_str: str) -> Optional[str]:
     match = re.search(r'(\d{5})', str(zip_code_str))
     return match.group(1) if match else None
 
-def insert_data_into_db(df: pd.DataFrame):
+def insert_data_into_db(df):
     """
     Connects to SQLite and performs a robust row-by-row insertion
     using 'INSERT OR IGNORE' to prevent crashing on duplicate listings.
